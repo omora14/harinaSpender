@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
+import { Pencil } from "lucide-react";
+import { TransactionEditor } from "@/components/dashboard/transaction-editor";
 import { Button } from "@/components/ui/button";
 import {
   formatCurrency,
@@ -19,10 +21,18 @@ export function TransactionList({
   transactions: Transaction[];
 }) {
   const [visible, setVisible] = useState(PAGE);
+  const [selected, setSelected] = useState<Transaction | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
+
   const slice = useMemo(
     () => transactions.slice(0, visible),
     [transactions, visible]
   );
+
+  function openEditor(tx: Transaction) {
+    setSelected(tx);
+    setEditorOpen(true);
+  }
 
   return (
     <div className="rounded-3xl border border-white/[0.08] bg-white/[0.02]">
@@ -31,7 +41,7 @@ export function TransactionList({
           <h2 className="text-lg font-medium text-white">Activity</h2>
           <p className="text-sm text-neutral-500">
             {transactions.length} transaction
-            {transactions.length === 1 ? "" : "s"} in view
+            {transactions.length === 1 ? "" : "s"} in view · tap to edit
           </p>
         </div>
       </div>
@@ -42,7 +52,6 @@ export function TransactionList({
         </p>
       ) : (
         <>
-          {/* Desktop table */}
           <div className="hidden md:block">
             <table className="w-full text-left text-sm">
               <thead>
@@ -51,6 +60,9 @@ export function TransactionList({
                   <th className="px-6 py-3 font-medium">Category</th>
                   <th className="px-6 py-3 font-medium">Note</th>
                   <th className="px-6 py-3 text-right font-medium">Amount</th>
+                  <th className="px-6 py-3 text-right font-medium">
+                    <span className="sr-only">Edit</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -88,6 +100,18 @@ export function TransactionList({
                         {income ? "+" : "−"}
                         {formatCurrency(toAmount(tx.amount))}
                       </td>
+                      <td className="px-4 py-3.5 text-right">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          className="text-neutral-400 hover:text-white"
+                          aria-label={`Edit ${tx.category}`}
+                          onClick={() => openEditor(tx)}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                      </td>
                     </tr>
                   );
                 })}
@@ -95,40 +119,48 @@ export function TransactionList({
             </table>
           </div>
 
-          {/* Mobile list */}
           <ul className="divide-y divide-white/[0.04] md:hidden">
             {slice.map((tx) => {
               const income = isIncome(tx.category);
               return (
-                <li key={tx.id} className="flex items-center gap-3 px-5 py-4">
-                  <div
-                    className={cn(
-                      "flex size-11 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold",
-                      income
-                        ? "bg-emerald-400/10 text-emerald-300"
-                        : "bg-rose-400/10 text-rose-300"
-                    )}
+                <li key={tx.id}>
+                  <button
+                    type="button"
+                    onClick={() => openEditor(tx)}
+                    className="flex w-full items-center gap-3 px-5 py-4 text-left transition active:bg-white/[0.04]"
                   >
-                    {income ? "+" : "−"}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium text-neutral-100">
-                      {tx.category}
-                    </p>
-                    <p className="truncate text-xs text-neutral-500">
-                      {format(parseISO(tx.created_at), "MMM d · h:mm a")}
-                      {tx.note ? ` · ${tx.note}` : ""}
-                    </p>
-                  </div>
-                  <p
-                    className={cn(
-                      "shrink-0 font-medium tabular-nums",
-                      income ? "text-emerald-300" : "text-white"
-                    )}
-                  >
-                    {income ? "+" : "−"}
-                    {formatCurrency(toAmount(tx.amount))}
-                  </p>
+                    <div
+                      className={cn(
+                        "flex size-11 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold",
+                        income
+                          ? "bg-emerald-400/10 text-emerald-300"
+                          : "bg-rose-400/10 text-rose-300"
+                      )}
+                    >
+                      {income ? "+" : "−"}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium text-neutral-100">
+                        {tx.category}
+                      </p>
+                      <p className="truncate text-xs text-neutral-500">
+                        {format(parseISO(tx.created_at), "MMM d · h:mm a")}
+                        {tx.note ? ` · ${tx.note}` : ""}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <p
+                        className={cn(
+                          "font-medium tabular-nums",
+                          income ? "text-emerald-300" : "text-white"
+                        )}
+                      >
+                        {income ? "+" : "−"}
+                        {formatCurrency(toAmount(tx.amount))}
+                      </p>
+                      <Pencil className="size-3.5 text-neutral-600" />
+                    </div>
+                  </button>
                 </li>
               );
             })}
@@ -148,6 +180,12 @@ export function TransactionList({
           </Button>
         </div>
       ) : null}
+
+      <TransactionEditor
+        transaction={selected}
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+      />
     </div>
   );
 }
