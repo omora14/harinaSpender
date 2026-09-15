@@ -133,17 +133,27 @@ Connect the repo in the Cloudflare dashboard (Worker **Settings → Builds → C
 - **Repository:** `omora14/harinaSpender`
 - **Branch:** `main`
 - **Build command:** `npx opennextjs-cloudflare build`
-- **Deploy command:** `npx opennextjs-cloudflare deploy`
+- **Deploy command:** `npx opennextjs-cloudflare deploy -- --keep-vars`
 
-Set Worker secrets / vars (same five as `.env.local`):
+### Critical: env vars in two places
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `EXPENSE_API_KEY`
-- `INGEST_USER_ID`
+`NEXT_PUBLIC_*` values are baked into the browser bundle at **build** time. Worker secrets alone are not enough.
 
-Every push to `main` builds and deploys automatically. No GitHub Actions required.
+**1. Build variables** (Worker → Settings → Builds → Variables and secrets)
+
+| Variable | Required at build |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes |
+| `SUPABASE_SERVICE_ROLE_KEY` | Recommended |
+| `EXPENSE_API_KEY` | Recommended |
+| `INGEST_USER_ID` | Recommended |
+
+**2. Runtime Worker secrets** (Worker → Settings → Variables / Secrets)
+
+Set the same five names again so server routes and middleware work after deploy.
+
+Without the Build variables, login/MFA pages can show “Loading…” forever because the browser client has empty Supabase keys.
 
 ### Manual deploy (optional)
 

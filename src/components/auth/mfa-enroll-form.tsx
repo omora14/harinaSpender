@@ -22,44 +22,54 @@ export function MfaEnrollForm() {
     let cancelled = false;
 
     async function startEnroll() {
-      const supabase = createClient();
-      const { data: existing } = await supabase.auth.mfa.listFactors();
-      const unverified = existing?.all?.find(
-        (f) => f.factor_type === "totp" && f.status === "unverified"
-      );
-      if (unverified) {
-        await supabase.auth.mfa.unenroll({ factorId: unverified.id });
-      }
+      try {
+        const supabase = createClient();
+        const { data: existing } = await supabase.auth.mfa.listFactors();
+        const unverified = existing?.all?.find(
+          (f) => f.factor_type === "totp" && f.status === "unverified"
+        );
+        if (unverified) {
+          await supabase.auth.mfa.unenroll({ factorId: unverified.id });
+        }
 
-      const { data, error: enrollError } = await supabase.auth.mfa.enroll({
-        factorType: "totp",
-        friendlyName: "Authenticator",
-      });
+        const { data, error: enrollError } = await supabase.auth.mfa.enroll({
+          factorType: "totp",
+          friendlyName: "Authenticator",
+        });
 
-      if (cancelled) return;
+        if (cancelled) return;
 
-      if (enrollError || !data) {
+        if (enrollError || !data) {
+          setError(
+            enrollError?.message ??
+              "Could not start MFA enrollment. Enable TOTP in Supabase Auth settings."
+          );
+          setLoading(false);
+          return;
+        }
+
+        setFactorId(data.id);
+        setSecret(data.totp.secret);
+        try {
+          const url = await QRCode.toDataURL(data.totp.uri, {
+            margin: 1,
+            width: 220,
+            color: { dark: "#fafafa", light: "#0a0a0a" },
+          });
+          setQrDataUrl(url);
+        } catch {
+          setQrDataUrl(null);
+        }
+        setLoading(false);
+      } catch (err) {
+        if (cancelled) return;
         setError(
-          enrollError?.message ??
-            "Could not start MFA enrollment. Enable TOTP in Supabase Auth settings."
+          err instanceof Error
+            ? err.message
+            : "Could not start MFA. Check Supabase env vars and try again."
         );
         setLoading(false);
-        return;
       }
-
-      setFactorId(data.id);
-      setSecret(data.totp.secret);
-      try {
-        const url = await QRCode.toDataURL(data.totp.uri, {
-          margin: 1,
-          width: 220,
-          color: { dark: "#fafafa", light: "#0a0a0a" },
-        });
-        setQrDataUrl(url);
-      } catch {
-        setQrDataUrl(null);
-      }
-      setLoading(false);
     }
 
     void startEnroll();
