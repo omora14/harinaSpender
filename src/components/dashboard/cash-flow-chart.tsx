@@ -15,7 +15,7 @@ import type { DailyFlow } from "@/lib/expenses/types";
 
 export function CashFlowChart({ data }: { data: DailyFlow[] }) {
   const hasData = data.some((d) => d.expenses > 0 || d.income > 0);
-
+ 
   return (
     <div className="flex h-full flex-col rounded-3xl border border-white/[0.08] bg-white/[0.02] p-5 sm:p-6">
       <div className="mb-2 flex flex-wrap items-end justify-between gap-3">
