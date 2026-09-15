@@ -13,14 +13,14 @@ Built with **Next.js 15**, **Supabase** (Auth + Postgres RLS), **Recharts**, and
 - Optional **starting balance** → cash on hand = starting + income − expenses
 - Mobile-first dashboard: period filters, category filter, search, charts, activity feed
 - CSV export of all transactions
-- Cloudflare deploy with GitHub Actions
+- Auto-deploy to Cloudflare Workers on push to `main` (Git integration)
 
 ## Architecture
 
 ```text
 iPhone Shortcut ──x-api-key──► /api/expenses ──service role──► Postgres (transactions)
 Browser ──Supabase Auth + MFA──► Dashboard / Settings ──RLS──► Postgres
-GitHub main ──Actions──► OpenNext build ──► Cloudflare Worker
+GitHub main ──Cloudflare Builds──► OpenNext build ──► Cloudflare Worker
 ```
 
 ## Stack
@@ -126,14 +126,33 @@ Adjust starting balance when money arrives outside the Shortcut (gifts, cash, tr
 
 ## Deploy to Cloudflare
 
-### One-time: Wrangler / secrets
+### Continuous deploy (GitHub → Cloudflare Builds)
+
+Connect the repo in the Cloudflare dashboard (Worker **Settings → Builds → Connect**):
+
+- **Repository:** `omora14/harinaSpender`
+- **Branch:** `main`
+- **Build command:** `npx opennextjs-cloudflare build`
+- **Deploy command:** `npx opennextjs-cloudflare deploy`
+
+Set Worker secrets / vars (same five as `.env.local`):
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `EXPENSE_API_KEY`
+- `INGEST_USER_ID`
+
+Every push to `main` builds and deploys automatically. No GitHub Actions required.
+
+### Manual deploy (optional)
 
 ```bash
 npx wrangler login
 npm run deploy
 ```
 
-Set Worker secrets (same five env vars as `.env.local`):
+Or set secrets via CLI:
 
 ```bash
 npx wrangler secret put NEXT_PUBLIC_SUPABASE_URL
@@ -142,27 +161,6 @@ npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
 npx wrangler secret put EXPENSE_API_KEY
 npx wrangler secret put INGEST_USER_ID
 ```
-
-### Continuous deploy (GitHub Actions)
-
-On every push to `main`, [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) builds with OpenNext and deploys.
-
-Add these **GitHub repository secrets** (Settings → Secrets and variables → Actions):
-
-| Secret | Purpose |
-| --- | --- |
-| `CLOUDFLARE_API_TOKEN` | Token with Workers edit permissions |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID |
-| `NEXT_PUBLIC_SUPABASE_URL` | Same as local |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same as local |
-| `SUPABASE_SERVICE_ROLE_KEY` | Same as local |
-| `EXPENSE_API_KEY` | Same as local |
-| `INGEST_USER_ID` | Same as local |
-
-Create an API token: [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens) → template **Edit Cloudflare Workers**.
-
-After merge to `main`, Actions deploys to your Worker (default name `harina-spender`).
-
 ## Scripts
 
 | Command | Description |
@@ -182,7 +180,6 @@ src/app/api/expenses       Shortcut ingestion
 src/app/api/export/csv     Authenticated CSV download
 src/lib/expenses           Income/expense analytics
 supabase/migrations        Schema + RLS
-.github/workflows          Cloudflare deploy CI
 ```
 
 ## License
