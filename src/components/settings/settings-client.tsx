@@ -139,11 +139,12 @@ export function SettingsClient({
         <p className="text-sm text-neutral-500">
           Download every transaction as CSV for spreadsheets or backups.
         </p>
-        <a href="/api/export/csv" download>
-          <Button type="button" variant="outline" className="h-11 w-full border-white/10">
-            <Download className="size-4" />
-            Export CSV
-          </Button>
+        <a
+          href="/api/export/csv"
+          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-white/10 bg-transparent text-sm font-medium text-neutral-100 transition hover:bg-white/[0.05]"
+        >
+          <Download className="size-4" />
+          Export CSV
         </a>
       </section>
 

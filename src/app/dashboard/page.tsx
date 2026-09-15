@@ -87,7 +87,6 @@ async function DashboardContent({
 
   const cashOnHand = computeCashOnHand(allTransactions, startingBalance);
   const metrics = computeMetrics(filtered, startingBalance);
-  // Period net/income/spend from filtered; cash on hand always all-time
   metrics.cashOnHand = cashOnHand;
 
   const categories = uniqueCategories(allTransactions);
@@ -102,12 +101,17 @@ async function DashboardContent({
   const cashFlow = dailyCashFlow(filtered, flowStart, flowEnd);
 
   return (
-    <main className="min-h-dvh bg-neutral-950 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+    <main className="relative min-h-dvh bg-neutral-950 pb-[max(2rem,env(safe-area-inset-bottom))]">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-[radial-gradient(ellipse_at_top,_rgba(103,232,249,0.08),_transparent_60%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(34,211,238,0.12),transparent),radial-gradient(ellipse_60%_40%_at_100%_0%,rgba(52,211,153,0.06),transparent)]"
       />
-      <div className="relative mx-auto max-w-lg px-4 sm:max-w-3xl lg:max-w-5xl">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.35] [background-image:linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:64px_64px] [mask-image:radial-gradient(ellipse_at_top,black_20%,transparent_70%)]"
+      />
+
+      <div className="relative">
         <DashboardHeader
           categories={categories}
           activePeriod={period}
@@ -115,13 +119,15 @@ async function DashboardContent({
           search={search}
         />
 
-        <div className="mt-5 space-y-5">
+        <div className="mx-auto max-w-[1600px] space-y-5 px-4 py-5 sm:space-y-6 sm:px-6 sm:py-6 lg:px-10 lg:py-8">
           <HeroBalance cashOnHand={cashOnHand} metrics={metrics} />
           <MetricCards metrics={metrics} />
-          <div className="grid gap-5 lg:grid-cols-2">
-            <CategoryDonut data={breakdown} />
+
+          <div className="grid gap-5 xl:grid-cols-[1.55fr_1fr] xl:gap-6">
             <CashFlowChart data={cashFlow} />
+            <CategoryDonut data={breakdown} />
           </div>
+
           <TransactionList transactions={filtered} />
         </div>
       </div>
